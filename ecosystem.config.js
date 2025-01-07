@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     apps: [
       {
         name: "theExplorer", // Name of the application
