@@ -28,7 +28,7 @@ connectToMongoDb(loadingConfig);
 
 // load all the ids one by one and store them on a hashMap
 async function loadingConfig() {
-  // addProxies();
+  addProxies();
   const config = await Config.find().wtimeout(5000);
   // appStoreExplorer(config[0].as_config, config[0].ipv4proxies, config[0].ipv6proxies);
   googlePlayExplorer(config[0]?.gp_config || {}, config[0]?.ipv4proxies || []);
@@ -1071,9 +1071,9 @@ app.use(
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 app.get("/status", (req, res) => {
-  const status = expl.length ? true : false;
+  // const status = expl.length ? true : false;
   res.json({
-    status,
+    status:true,
     total_apps_loaded: APPS_IDS.size,
     total_db_apps_scanned: total_db_apps_scanned,
     total_apps_explored: total_apps_explored,
@@ -1137,5 +1137,5 @@ app.post("/update", async (req, res) => {
 });
 
 app.listen(4010, () => {
-  console.log("server listen to port 4001");
+  console.log("server listen to port 4010");
 });
