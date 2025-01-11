@@ -7,6 +7,57 @@ import logger from "./logger.js";
 const G_API = process.env.G_API + "/api" ?? "http://localhost:3099/api";
 const IOS_API = process.env.IOS_API + "/api" ?? "http://localhost:3100/api";
 
+const APP = [
+  "Art and Design",
+"Auto and Vehicles",
+"Beauty",
+"Books and Reference",
+"Business",
+"Comics",
+"Communications",
+"Dating",
+"Education",
+"Entertainment",
+"Events",
+"Finance",
+"Food and Drink",
+"Health and Fitness",
+"House and Home",
+"Libraries and Demo",
+"Lifestyle",
+"Maps and Navigation",
+"Medical",
+"Music and Audio",
+"News and Magazines",
+"Parenting",
+"Personalization",
+"Photography",
+"Productivity",
+"Shopping",
+"Social",
+"Tools",
+"Travel and Local",
+"Video Players and Editors",
+"Weather"
+]
+const GAME = [
+  "Action",
+"adventure",
+"arcade",
+"board",
+"card",
+"casino",
+"casual",
+"educational",
+"music",
+"puzzle",
+"racing",
+"role playing",
+"simulation",
+"strategy",
+"trivia",
+"word"
+]
 let config = {
   platform: "google_play",
   delay: 100,
@@ -183,10 +234,16 @@ function googlePlay(){
     const categories = app.categories?.map((category) => category.name);
     let type;
     if (app.genreId) {
-      if (app.genreId.includes("GAME") || app.categories.filter(category => { if(category.id?.includes("GAME") || category.name?.includes("Game"))return true })) {
+      if (categories.some((category) => GAME.includes(category))) {
         type = "GAME";
-      } else {
+      } else if (categories.some((category) => APP.includes(category))){
         type = "APP";
+      }else{
+        if (app.title.toLowerCase().includes("game") || app.summary.toLowerCase().includes("game") || app.description.toLowerCase().includes("game") || app.developer.toLowerCase().includes("game")) {
+          type = "GAME";
+        }else{
+          type = "APP";
+        }
       }
     }
     G_Apps.create({

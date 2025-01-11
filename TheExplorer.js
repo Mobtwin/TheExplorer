@@ -30,7 +30,7 @@ connectToMongoDb(loadingConfig);
 async function loadingConfig() {
   addProxies();
   const config = await Config.find().wtimeout(5000);
-  appStoreExplorer(config[0].as_config, config[0].ipv4proxies, config[0].ipv6proxies);
+  appStoreExplorer(config[0]?.as_config, config[0]?.ipv4proxies, config[0]?.ipv6proxies);
   googlePlayExplorer(config[0]?.gp_config || {}, config[0]?.ipv4proxies || []);
   // Ios_Apps.updateMany({}, { $unset: { "positions": 1}}).then(console.log)
   // syncDevelopers();
@@ -321,7 +321,7 @@ function googlePlayExplorer(config, proxies) {
         `${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
       );
     });
-    await fetch(`${G_API}/proxy/add`, {
+    await fetch(`${G_API}/proxy/add`, { 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
