@@ -555,7 +555,7 @@ export const gAppConstantsSchema = new mongoose.Schema({
   sort: [map_dataSchema],
   age: [map_dataSchema],
   permission: [map_dataSchema],
-});
+},{suppressReservedKeysWarning: true,});
 
 export const appStoreConstantsSchema = new mongoose.Schema({
   collection: [dataSchema],
@@ -563,7 +563,7 @@ export const appStoreConstantsSchema = new mongoose.Schema({
   device: [map_dataSchema],
   sort: [map_dataSchema],
   markets: [map_dataSchema],
-});
+},{suppressReservedKeysWarning: true,});
 
 const featureSchema = new Schema({
   status: Boolean,

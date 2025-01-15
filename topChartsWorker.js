@@ -514,7 +514,9 @@ async function updateIosAppRanking(apps, country, collection, category) {
             };
           }
         }
+
         if (dbAppUpdates.toUpdate) {
+          // First update the nested field
           Ios_Apps.updateOne(
             { _id: newApp._id, "positions._id": path },
             {
@@ -522,14 +524,42 @@ async function updateIosAppRanking(apps, country, collection, category) {
                 ...dbAppUpdates.fields,
                 "positions.$": dbAppUpdates.position,
               },
-              $push: {
-                countries: countryCode,
-              },
             }
-          ).catch((err) =>
-            console.error("save appDb on updateTopChart : " + err)
-          );
-        } else {
+          )
+            .then(() => {
+              // Then push the new country code to the countries array
+              return Ios_Apps.updateOne(
+                { _id: newApp._id },
+                {
+                  $push: {
+                    countries: countryCode,
+                  },
+                }
+              );
+            })
+            .catch((err) =>
+              console.error("Save appDb on updateTopChart (Ios_Apps) 1 : " + err)
+            );
+        }
+
+        // if (dbAppUpdates.toUpdate) {
+        //   Ios_Apps.updateOne(
+        //     { _id: newApp._id, "positions._id": path },
+        //     {
+        //       $set: {
+        //         ...dbAppUpdates.fields,
+        //         "positions.$": dbAppUpdates.position,
+        //       },
+        //       $push: {
+        //         countries: countryCode,
+        //       },
+        //     }
+        //   ).catch((err) =>
+        //     console.error("save appDb on updateTopChart : " + err)
+        //   );
+        // }
+        
+        else {
           Ios_Apps.updateOne(
             { _id: newApp._id },
             {
@@ -587,7 +617,7 @@ async function updateIosAppRanking(apps, country, collection, category) {
     }
   });
   console.log(
-    " app store: new created: " +
+    "App store: new created: " +
       newCreated +
       " new updated: " +
       newUpdated +

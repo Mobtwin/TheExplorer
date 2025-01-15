@@ -128,12 +128,18 @@ function googlePlayExplorer(config, proxies) {
 
   // setup the explorer
   function setupTheExplorer() {
-    // startTopChartWorker();
+    startTopChartWorker();
     loadIds(() => {
       startWorker();
-      // startWorker();
-      // startWorker();
-      // startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
+      startWorker();
     });
   }
 
@@ -338,6 +344,7 @@ function googlePlayExplorer(config, proxies) {
         throw err;
       });
   }
+
   async function theAppLineVerification(ids) {
     ids.forEach((id) => {
       if (
@@ -353,6 +360,7 @@ function googlePlayExplorer(config, proxies) {
       }
     });
   }
+
   async function theDevLineVerification(dev) {
     if (!STORAGE.DEVS_IDS.has(dev) && !STORAGE.NEW_DEVS_IDS.has(dev)) {
       STATS.total_devs_explored++;
@@ -362,6 +370,7 @@ function googlePlayExplorer(config, proxies) {
       });
     }
   }
+
   const updateConfig = async (updates) => {
     Config = { ...Config, ...updates };
     EXPLORERS.forEach((worker) => {
@@ -514,7 +523,7 @@ function appStoreExplorer(config, v4proxies, v6proxies) {
         `${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
       );
     });
-    console.log(proxies);
+    // console.log(proxies);
     await fetch(`${IOS_API}/proxy/add`, {
       method: "POST",
       headers: {
@@ -523,7 +532,7 @@ function appStoreExplorer(config, v4proxies, v6proxies) {
       body: JSON.stringify({ proxies }),
     })
       .then((response) => response.json())
-      .then((response) => console.log(response))
+      // .then((response) => console.log(response))
       .catch((err) => {
         console.error("failed to setup proxies for appStore api ", err.message);
         throw err;
@@ -799,6 +808,7 @@ function appStoreExplorer(config, v4proxies, v6proxies) {
       });
     });
   };
+
   return { updateConfig };
 }
 
