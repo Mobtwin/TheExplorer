@@ -21,7 +21,7 @@ EXPOSE 8080
 
 
 # Start the application
-ENTRYPOINT ["pm2", "start", "ecosystem.config.js", "--no-daemon"]
+ENTRYPOINT ["pm2", "start", "ecosystem.config.cjs", "--no-daemon"]
 
 #command build
 #docker build -f Dockerfile.run -t user_mobtwin .
