@@ -30,7 +30,7 @@ connectToMongoDb(loadingConfig);
 async function loadingConfig() {
   addProxies();
   const config = await Config.find().wtimeout(5000);
-  appStoreExplorer(config[0]?.as_config, config[0]?.ipv4proxies, config[0]?.ipv6proxies);
+  // appStoreExplorer(config[0]?.as_config, config[0]?.ipv4proxies, config[0]?.ipv6proxies);
   googlePlayExplorer(config[0]?.gp_config || {}, config[0]?.ipv4proxies || []);
   // Ios_Apps.updateMany({}, { $unset: { "positions": 1}}).then(console.log)
   // syncDevelopers();
@@ -59,13 +59,47 @@ function googlePlayExplorer(config, proxies) {
     total_workers: 0,
     start_at: new Date(),
   };
+  const BATCH_SIZE = 500;
+  let page = 0;
   // storage for all workers instances
   let EXPLORERS = [];
   const TOP_CHARTS_EXPLORERS = [];
   // config
   let Config = config;
   addProxies(proxies).then(setupTheExplorer);
+  const processApp = (app,today,alreadyUpdated,needToBeUpdated) => {
+    if (app.updated_at != undefined && app.updated_at > today) {
+      alreadyUpdated++;
+      STORAGE.APPS_IDS.set(app.id, { value: true, onProcess: false });
+    } else {
+      STORAGE.APPS_IDS.set(app.id, {
+        value: false,
+        onProcess: false,
+      });
+      needToBeUpdated++;
+    }
+  }
+  async function fetchAppsBatch(today,alreadyUpdated,needToBeUpdated) {
+    const apps = await G_Apps.find()
+      .select(
+        "_id released updated_at published country countries earlyAccessEnabled"
+      )
+      .skip(page * BATCH_SIZE)
+      .limit(BATCH_SIZE)
+      .lean(); // Converts Mongoose documents to plain objects (less memory usage)
 
+    if (apps.length === 0) {
+      console.log("✅ Finished processing all apps.");
+      return true;
+    }
+
+    for (const app of apps) {
+      processApp(app,today,alreadyUpdated,needToBeUpdated);
+    }
+
+    page++;
+    setImmediate(fetchAppsBatch); // Prevents blocking the event loop
+  }
   // load ids from the database
   async function loadIds(callback) {
     const today = new Date();
@@ -74,56 +108,40 @@ function googlePlayExplorer(config, proxies) {
     let needToBeUpdated = 0;
     today.setHours(0, 0);
 
-    G_Apps.find()
-      .select(
-        "_id released updated_at published country countries earlyAccessEnabled "
-      )
-      .cursor()
-      .eachAsync((app, i) => {
-        if (app.updated_at != undefined && app.updated_at > today) {
-          alreadyUpdated++;
-          STORAGE.APPS_IDS.set(app.id, { value: true, onProcess: false });
-        } else {
-          STORAGE.APPS_IDS.set(app.id, {
-            value: false,
-            onProcess: false,
-          });
-          needToBeUpdated++;
-        }
-      })
-      .then(() => {
-        logger.info("alreadyUpdated : " + alreadyUpdated);
-        logger.info("needToBeUpdated : " + needToBeUpdated);
-        logger.info("loading google play apps ids : finish successfully");
-        needToBeUpdated = 0;
-        alreadyUpdated = 0;
-        G_DEVs.find("_id updated_at")
-          .cursor()
-          .eachAsync((dev, i) => {
-            if (dev.updated_at && dev.updated_at > today) {
-              STORAGE.DEVS_IDS.set(dev.id, {
-                value: true,
-                onProcess: false,
-              });
-              alreadyUpdated++;
-            } else {
-              STORAGE.DEVS_IDS.set(dev.id, {
-                value: false,
-                onProcess: false,
-              });
-              needToBeUpdated++;
-            }
-          })
-          .then(() => {
-            logger.info("alreadyUpdated : " + alreadyUpdated);
-            logger.info("needToBeUpdated : " + needToBeUpdated);
-            logger.info("loading google play Dev's ids : finish successfully");
-            callback();
-          });
-      })
-      .catch((err) => {
-        console.error("loading google play ids : ", err);
-      });
+    fetchAppsBatch(today,alreadyUpdated,needToBeUpdated).then(() => {
+      logger.info("alreadyUpdated : " + alreadyUpdated);
+      logger.info("needToBeUpdated : " + needToBeUpdated);
+      logger.info("loading google play apps ids : finish successfully");
+      needToBeUpdated = 0;
+      alreadyUpdated = 0;
+      G_DEVs.find("_id updated_at")
+        .cursor()
+        .eachAsync((dev, i) => {
+          if (dev.updated_at && dev.updated_at > today) {
+            STORAGE.DEVS_IDS.set(dev.id, {
+              value: true,
+              onProcess: false,
+            });
+            alreadyUpdated++;
+          } else {
+            STORAGE.DEVS_IDS.set(dev.id, {
+              value: false,
+              onProcess: false,
+            });
+            needToBeUpdated++;
+          }
+        })
+        .then(() => {
+          logger.info("alreadyUpdated : " + alreadyUpdated);
+          logger.info("needToBeUpdated : " + needToBeUpdated);
+          logger.info("loading google play Dev's ids : finish successfully");
+          callback();
+        });
+    })
+    .catch((err) => {
+      console.error("loading google play ids : ", err);
+    });
+    
   }
 
   // setup the explorer
@@ -327,7 +345,7 @@ function googlePlayExplorer(config, proxies) {
         `${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
       );
     });
-    await fetch(`${G_API}/proxy/add`, { 
+    await fetch(`${G_API}/proxy/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -939,7 +957,7 @@ app.use(cors({ origin: "*" }));
 app.get("/status", (req, res) => {
   // const status = expl.length ? true : false;
   res.json({
-    status:true,
+    status: true,
     total_apps_loaded: APPS_IDS.size,
     total_db_apps_scanned: total_db_apps_scanned,
     total_apps_explored: total_apps_explored,
@@ -1003,5 +1021,5 @@ app.post("/update", async (req, res) => {
 });
 
 app.listen(process.env.PORT, () => {
-  console.log("server listen to port "+process.env.PORT);
+  console.log("server listen to port " + process.env.PORT);
 });
